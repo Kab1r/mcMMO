@@ -1,6 +1,5 @@
 package com.gmail.nossr50.listeners;
 
-import com.gmail.nossr50.config.Config;
 import com.gmail.nossr50.config.WorldBlacklist;
 import com.gmail.nossr50.datatypes.player.McMMOPlayer;
 import com.gmail.nossr50.datatypes.skills.PrimarySkillType;
@@ -11,6 +10,7 @@ import com.gmail.nossr50.runnables.player.PlayerUpdateInventoryTask;
 import com.gmail.nossr50.skills.alchemy.Alchemy;
 import com.gmail.nossr50.skills.alchemy.AlchemyPotionBrewer;
 import com.gmail.nossr50.util.ItemUtils;
+import com.gmail.nossr50.util.MetadataConstants;
 import com.gmail.nossr50.util.Permissions;
 import com.gmail.nossr50.util.player.UserManager;
 import com.gmail.nossr50.util.skills.SkillUtils;
@@ -67,8 +67,7 @@ public class InventoryListener implements Listener {
                 }
 
                 //Profile doesn't exist
-                if(UserManager.getOfflinePlayer(offlinePlayer) == null)
-                {
+                if(UserManager.getOfflinePlayer(offlinePlayer) == null) {
                     return;
                 }
 
@@ -116,7 +115,8 @@ public class InventoryListener implements Listener {
 
                 //Profile doesn't exist
                 if(offlineProfile != null) {
-                    event.setResult(offlineProfile.getSmeltingManager().smeltProcessing(smelting, event.getResult()));
+                    //Process smelting
+                    offlineProfile.getSmeltingManager().smeltProcessing(event, furnace);
                 }
             }
         }
@@ -381,17 +381,17 @@ public class InventoryListener implements Listener {
 
         ItemStack item = event.getItem();
 
-        if (Config.getInstance().getPreventHopperTransferIngredients() && item.getType() != Material.POTION && item.getType() != Material.SPLASH_POTION && item.getType() != Material.LINGERING_POTION) {
+        if (mcMMO.p.getGeneralConfig().getPreventHopperTransferIngredients() && item.getType() != Material.POTION && item.getType() != Material.SPLASH_POTION && item.getType() != Material.LINGERING_POTION) {
             event.setCancelled(true);
             return;
         }
 
-        if (Config.getInstance().getPreventHopperTransferBottles() && (item.getType() == Material.POTION || item.getType() == Material.SPLASH_POTION || item.getType() == Material.LINGERING_POTION)) {
+        if (mcMMO.p.getGeneralConfig().getPreventHopperTransferBottles() && (item.getType() == Material.POTION || item.getType() == Material.SPLASH_POTION || item.getType() == Material.LINGERING_POTION)) {
             event.setCancelled(true);
             return;
         }
 
-        if (Config.getInstance().getEnabledForHoppers() && AlchemyPotionBrewer.isValidIngredient(null, item)) {
+        if (mcMMO.p.getGeneralConfig().getEnabledForHoppers() && AlchemyPotionBrewer.isValidIngredient(null, item)) {
             AlchemyPotionBrewer.scheduleCheck(null, (BrewingStand) holder);
         }
     }
@@ -403,6 +403,7 @@ public class InventoryListener implements Listener {
         }
 
         SkillUtils.removeAbilityBuff(event.getCurrentItem());
+
         if (event.getAction() == InventoryAction.HOTBAR_SWAP) {
             if(isOutsideWindowClick(event))
                 return;
@@ -427,7 +428,7 @@ public class InventoryListener implements Listener {
 
         final HumanEntity whoClicked = event.getWhoClicked();
 
-        if (!whoClicked.hasMetadata(mcMMO.playerDataKey)) {
+        if (!whoClicked.hasMetadata(MetadataConstants.METADATA_KEY_PLAYER_DATA)) {
             return;
         }
 
